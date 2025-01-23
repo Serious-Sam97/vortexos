@@ -35,3 +35,7 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Database ###
+gamecache.db
+test-databae.db

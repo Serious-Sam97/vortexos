@@ -1,4 +1,4 @@
-package com.serioussam.gamecache.gamecache;
+package com.serioussam.gamecache;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

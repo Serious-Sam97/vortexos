@@ -1,4 +1,4 @@
-package com.serioussam.gamecache.gamecache;
+package com.serioussam.gamecache;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
