@@ -3,6 +3,7 @@ import bgImage from '/clouds.jpg';
 import w95 from '/w95.png';
 import { MenuList, MenuListItem, Separator, styleReset, Button } from 'react95';
 import styled from 'styled-components';
+import { Link } from 'react-router';
 
 const Intro: React.FC = () => {
     const ContentWrapper = styled.div`
@@ -35,7 +36,7 @@ const Intro: React.FC = () => {
             </div>
             <h1>GameCache</h1>
             <div className="card">
-                <Button primary>Are you ready?</Button>
+                <Link to="/windows"><Button primary>Are you ready?</Button></Link>
             </div>
             <p className="read-the-docs">
                 By Serious Sam

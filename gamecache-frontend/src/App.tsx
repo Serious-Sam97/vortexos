@@ -5,6 +5,7 @@ import ms_sans_serif from 'react95/dist/fonts/ms_sans_serif.woff2';
 import ms_sans_serif_bold from 'react95/dist/fonts/ms_sans_serif_bold.woff2';
 import { BrowserRouter, Routes, Route } from "react-router";
 import Intro from './pages/Intro';
+import Windows from './pages/Windows';
 
 const GlobalStyles = createGlobalStyle`
   ${styleReset}
@@ -49,7 +50,7 @@ const App = () => (
       <ThemeProvider theme={original}>
         <Routes>
           <Route path="/" element={<Intro />} />
-          {/* <Route path="/game" element={<Game />} /> */}
+          <Route path="/windows" element={<Windows />} />
         </Routes>
       </ThemeProvider>
     </BrowserRouter>
