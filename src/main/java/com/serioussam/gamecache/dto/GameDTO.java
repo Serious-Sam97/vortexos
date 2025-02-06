@@ -1,31 +1,27 @@
-package com.serioussam.gamecache.model;
+package com.serioussam.gamecache.dto;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import jakarta.annotation.Nullable;
+import jakarta.persistence.Column;
 
 import java.time.LocalDate;
 
-@Entity
-@Table(name = "game")
-public class Game {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+public class GameDTO {
 
-    @Column(nullable = false)
+    @Nullable
+    private Long id;
     private String title;
 
-    @ManyToOne
-    @JoinColumn(name = "platform_id", nullable = false) // Foreign key column
-    private Platform platform;
+    @JsonProperty("platform_id")
+    private Long platform_id;
 
-    @Column(nullable = true)
+    @Nullable
     private LocalDate startedDate;
 
-    @Column(nullable = true)
+    @Nullable
     private LocalDate completedDate;
 
-    @Column(nullable = true)
+    @Nullable
     private boolean completed;
 
     public Long getId()
@@ -70,13 +66,11 @@ public class Game {
         this.completed = completed;
     }
 
-    public void setPlatform(Platform platform)
-    {
-        this.platform = platform;
+    public Long getPlatformId() {
+        return this.platform_id;
     }
 
-    public Platform getPlatform()
-    {
-        return this.platform;
+    public void setPlatformId(Long platform_id) {
+        this.platform_id = platform_id;
     }
 }
