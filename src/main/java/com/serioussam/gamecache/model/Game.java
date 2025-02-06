@@ -17,9 +17,11 @@ public class Game {
     @JoinColumn(name = "platform_id", nullable = false) // Foreign key column
     private Platform platform;
 
-    private String genre;
+    @Column(nullable = false)
+    private String startedDate;
 
-    private String releaseDate;
+    @Column(nullable = false)
+    private String completedDate;
 
     private boolean completed;
 
@@ -41,20 +43,20 @@ public class Game {
         this.title = title;
     }
 
-    public String getGenre() {
-        return genre;
+    public String getStartedDate() {
+        return startedDate;
     }
 
-    public void setGenre(String genre) {
-        this.genre = genre;
+    public void setStartedDate(String startedDate) {
+        this.startedDate = startedDate;
     }
 
-    public String getReleaseDate() {
-        return releaseDate;
+    public String getCompletedDate() {
+        return completedDate;
     }
 
-    public void setReleaseDate(String releaseDate) {
-        this.releaseDate = releaseDate;
+    public void setCompletedDate(String completedDate) {
+        this.completedDate = completedDate;
     }
 
     public boolean isCompleted() {
