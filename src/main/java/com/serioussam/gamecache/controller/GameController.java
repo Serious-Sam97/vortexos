@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/games")
@@ -48,12 +49,12 @@ public class GameController {
 
     @PostMapping("/{id}")
     public ResponseEntity<Game> updateGame(@PathVariable("id") Long gameId, @RequestBody GameDTO gameResponse) {
-        Game game = this.gameRepository.findAllById(gameId);
+        Optional<Game> gameOptional = this.gameRepository.findById(gameId);
 
-        if (game != null) {
+        if (gameOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-
+        Game game = gameOptional.get();
         game.setNotes(gameResponse.getNotes());
         this.gameRepository.save(game);
 
@@ -62,7 +63,7 @@ public class GameController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteGame(@PathVariable("id") Long gameId) {
-        boolean gameExists = this.gameRepository.findAllById(gameId);
+        boolean gameExists = this.gameRepository.existsById(gameId);
 
         if (!gameExists) {
             return ResponseEntity.notFound().build();
