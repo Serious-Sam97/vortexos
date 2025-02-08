@@ -45,4 +45,30 @@ public class GameController {
 
         return new ResponseEntity<>(savedGame, HttpStatus.CREATED);
     }
+
+    @PostMapping("/{id}")
+    public ResponseEntity<Game> updateGame(@PathVariable("id") Long gameId, @RequestBody GameDTO gameResponse) {
+        Game game = this.gameRepository.findAllById(gameId);
+
+        if (game != null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        game.setNotes(gameResponse.getNotes());
+        this.gameRepository.save(game);
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteGame(@PathVariable("id") Long gameId) {
+        boolean gameExists = this.gameRepository.findAllById(gameId);
+
+        if (!gameExists) {
+            return ResponseEntity.notFound().build();
+        }
+
+        this.gameRepository.deleteById(gameId);
+        return ResponseEntity.noContent().build();
+    }
 }

@@ -24,6 +24,9 @@ public class GameDTO {
     @Nullable
     private boolean completed;
 
+    @Nullable
+    private String notes;
+
     public Long getId()
     {
         return id;
@@ -72,5 +75,15 @@ public class GameDTO {
 
     public void setPlatformId(Long platform_id) {
         this.platform_id = platform_id;
+    }
+
+    public void setNotes(String notes)
+    {
+        this.notes = notes;
+    }
+
+    public String getNotes()
+    {
+        return this.notes;
     }
 }

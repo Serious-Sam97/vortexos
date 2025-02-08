@@ -28,6 +28,9 @@ public class Game {
     @Column(nullable = true)
     private boolean completed;
 
+    @Column(nullable = true)
+    private String notes;
+
     public Long getId()
     {
         return id;
@@ -78,5 +81,15 @@ public class Game {
     public Platform getPlatform()
     {
         return this.platform;
+    }
+
+    public void setNotes(String notes)
+    {
+        this.notes = notes;
+    }
+
+    public String getNotes()
+    {
+        return this.notes;
     }
 }
