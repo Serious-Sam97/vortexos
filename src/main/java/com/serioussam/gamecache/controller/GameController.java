@@ -47,15 +47,32 @@ public class GameController {
         return new ResponseEntity<>(savedGame, HttpStatus.CREATED);
     }
 
-    @PostMapping("/{id}")
+    @PutMapping("/{id}")
     public ResponseEntity<Game> updateGame(@PathVariable("id") Long gameId, @RequestBody GameDTO gameResponse) {
         Optional<Game> gameOptional = this.gameRepository.findById(gameId);
 
         if (gameOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
+
         Game game = gameOptional.get();
         game.setNotes(gameResponse.getNotes());
+        this.gameRepository.save(game);
+
+        return new ResponseEntity<>(game, HttpStatus.OK);
+    }
+
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<Game> completeGame(@PathVariable("id") Long gameId) {
+        Optional<Game> gameOptional = this.gameRepository.findById(gameId);
+
+        if (gameOptional.isEmpty()) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Game game = gameOptional.get();
+        game.setCompletedDate(LocalDate.now());
+        game.setCompleted(true);
         this.gameRepository.save(game);
 
         return ResponseEntity.noContent().build();

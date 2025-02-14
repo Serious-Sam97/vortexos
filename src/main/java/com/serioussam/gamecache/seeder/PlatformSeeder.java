@@ -23,9 +23,9 @@ public class PlatformSeeder implements CommandLineRunner {
         }
 
         String[] platforms = {
-                "NES", "Super Nintendo", "Nintendo 64", "GameCube", "Nintendo Wii", "Nintendo 3DS", "Wii U",
+                "PC", "NES", "Super Nintendo", "Nintendo 64", "GameCube", "Nintendo Wii", "Nintendo 3DS", "Wii U",
                 "Nintendo Switch", "PlayStation", "PlayStation 2", "PlayStation 3", "PlayStation 4", "PlayStation 5", "PlayStation Portable",
-                "PlayStation Vita", "Xbox", "Xbox 360", "Xbox One", "Xbox Series X", "Xbox Series S", "Sega Genesis", "Sega Dreamcast"
+                "PlayStation Vita", "Xbox", "Xbox 360", "Xbox One", "Xbox Series X", "Xbox Series S", "Sega Genesis", "Sega Dreamcast", "Quest"
         };
 
         for (String platform : platforms) {
