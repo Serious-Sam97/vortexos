@@ -1,6 +1,6 @@
-package com.serioussam.gamecache.model;
+package com.serioussam.gamecache.domain.platform;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.serioussam.gamecache.domain.game.Game;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;

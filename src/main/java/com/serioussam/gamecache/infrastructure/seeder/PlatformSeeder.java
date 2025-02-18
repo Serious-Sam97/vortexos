@@ -1,23 +1,23 @@
-package com.serioussam.gamecache.seeder;
+package com.serioussam.gamecache.infrastructure.seeder;
 
-import com.serioussam.gamecache.model.Platform;
-import com.serioussam.gamecache.repository.PlatformRepository;
+import com.serioussam.gamecache.domain.platform.Platform;
+import com.serioussam.gamecache.infrastructure.repository.JpaPlatformRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PlatformSeeder implements CommandLineRunner {
-    private final PlatformRepository platformRepository;
+    private final JpaPlatformRepository jpaPlatformRepository;
 
-    public PlatformSeeder(PlatformRepository platformRepository)
+    public PlatformSeeder(JpaPlatformRepository jpaPlatformRepository)
     {
-        this.platformRepository = platformRepository;
+        this.jpaPlatformRepository = jpaPlatformRepository;
     }
 
     @Override
     public void run(String... args) throws Exception
     {
-        if (platformRepository.count() != 0) {
+        if (jpaPlatformRepository.count() != 0) {
             System.out.println("Platforms already added, skipping this step!");
             return;
         }
@@ -31,7 +31,7 @@ public class PlatformSeeder implements CommandLineRunner {
         for (String platform : platforms) {
             Platform plat = new Platform();
             plat.setName(platform);
-            platformRepository.save(plat);
+            jpaPlatformRepository.save(plat);
         }
     }
 }
