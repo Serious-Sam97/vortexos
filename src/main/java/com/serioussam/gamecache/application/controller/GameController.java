@@ -28,7 +28,13 @@ public class GameController {
     @GetMapping
     public List<Game> getAllGames()
     {
-        return this.jpaGameRepository.findAll();
+        return this.jpaGameRepository.gamesList();
+    }
+
+    @GetMapping("/pending")
+    public List<Game> getAllPendingGames()
+    {
+        return this.jpaGameRepository.pendingGamesList();
     }
 
     @PostMapping
