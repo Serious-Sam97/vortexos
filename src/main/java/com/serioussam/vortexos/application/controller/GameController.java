@@ -96,4 +96,19 @@ public class GameController {
         this.jpaGameRepository.deleteById(gameId);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/{id}/start")
+    public ResponseEntity<Void> startGame(@PathVariable("id") Long gameId) {
+        boolean gameExists = this.jpaGameRepository.existsById(gameId);
+
+        if (!gameExists) {
+            return ResponseEntity.notFound().build();
+        }
+
+        Game game = this.jpaGameRepository.findById(gameId).get();
+        game.setBacklog(false);
+        this.jpaGameRepository.save(game);
+
+        return ResponseEntity.noContent().build();
+    }
 }
