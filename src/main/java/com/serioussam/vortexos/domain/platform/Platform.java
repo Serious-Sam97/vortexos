@@ -1,6 +1,6 @@
-package com.serioussam.gamecache.domain.platform;
+package com.serioussam.vortexos.domain.platform;
 
-import com.serioussam.gamecache.domain.game.Game;
+import com.serioussam.vortexos.domain.game.Game;
 import jakarta.persistence.*;
 
 import java.util.ArrayList;

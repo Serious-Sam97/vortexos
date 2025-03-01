@@ -1,4 +1,4 @@
-package com.serioussam.gamecache.application.dto;
+package com.serioussam.vortexos.application.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.Nullable;
@@ -20,6 +20,8 @@ public class GameDTO {
 
     @Nullable
     private LocalDate completedDate;
+
+    private boolean backlog = false;
 
     @Nullable
     private boolean completed;
@@ -85,5 +87,15 @@ public class GameDTO {
     public String getNotes()
     {
         return this.notes;
+    }
+
+    public void setBacklog(boolean backlog)
+    {
+        this.backlog = backlog;
+    }
+
+    public boolean getBacklog()
+    {
+        return this.backlog;
     }
 }

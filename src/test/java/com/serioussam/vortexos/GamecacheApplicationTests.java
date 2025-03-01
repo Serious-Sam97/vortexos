@@ -1,10 +1,10 @@
-package com.serioussam.gamecache;
+package com.serioussam.vortexos;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class GamecacheApplicationTests {
+class VortexOSApplicationTests {
 
 	@Test
 	void contextLoads() {

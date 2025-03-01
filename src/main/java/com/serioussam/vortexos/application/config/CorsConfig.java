@@ -1,4 +1,4 @@
-package com.serioussam.gamecache.application.config;
+package com.serioussam.vortexos.application.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;

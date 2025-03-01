@@ -37,5 +37,5 @@ out/
 .vscode/
 
 ### Database ###
-gamecache.db
+vortex.db
 test-databae.db

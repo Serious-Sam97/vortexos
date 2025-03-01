@@ -1,10 +1,10 @@
-package com.serioussam.gamecache.application.controller;
+package com.serioussam.vortexos.application.controller;
 
-import com.serioussam.gamecache.application.dto.GameDTO;
-import com.serioussam.gamecache.domain.game.Game;
-import com.serioussam.gamecache.domain.platform.Platform;
-import com.serioussam.gamecache.infrastructure.repository.JpaGameRepository;
-import com.serioussam.gamecache.infrastructure.repository.JpaPlatformRepository;
+import com.serioussam.vortexos.application.dto.GameDTO;
+import com.serioussam.vortexos.domain.game.Game;
+import com.serioussam.vortexos.domain.platform.Platform;
+import com.serioussam.vortexos.infrastructure.repository.JpaGameRepository;
+import com.serioussam.vortexos.infrastructure.repository.JpaPlatformRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -31,10 +31,10 @@ public class GameController {
         return this.jpaGameRepository.gamesList();
     }
 
-    @GetMapping("/pending")
+    @GetMapping("/backlog")
     public List<Game> getAllPendingGames()
     {
-        return this.jpaGameRepository.pendingGamesList();
+        return this.jpaGameRepository.backlogGamesList();
     }
 
     @PostMapping
@@ -47,6 +47,7 @@ public class GameController {
         game.setTitle(gameResponse.getTitle());
         game.setStartedDate(LocalDate.now());
         game.setPlatform(platform);
+        game.setBacklog(gameResponse.getBacklog());
 
         Game savedGame = jpaGameRepository.save(game);
 

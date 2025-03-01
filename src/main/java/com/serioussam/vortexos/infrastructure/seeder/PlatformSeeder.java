@@ -1,7 +1,7 @@
-package com.serioussam.gamecache.infrastructure.seeder;
+package com.serioussam.vortexos.infrastructure.seeder;
 
-import com.serioussam.gamecache.domain.platform.Platform;
-import com.serioussam.gamecache.infrastructure.repository.JpaPlatformRepository;
+import com.serioussam.vortexos.domain.platform.Platform;
+import com.serioussam.vortexos.infrastructure.repository.JpaPlatformRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 

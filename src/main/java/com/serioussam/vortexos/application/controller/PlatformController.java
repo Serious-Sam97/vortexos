@@ -1,7 +1,7 @@
-package com.serioussam.gamecache.application.controller;
+package com.serioussam.vortexos.application.controller;
 
-import com.serioussam.gamecache.domain.platform.Platform;
-import com.serioussam.gamecache.infrastructure.repository.JpaPlatformRepository;
+import com.serioussam.vortexos.domain.platform.Platform;
+import com.serioussam.vortexos.infrastructure.repository.JpaPlatformRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

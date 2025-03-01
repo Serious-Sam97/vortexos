@@ -1,4 +1,4 @@
-package com.serioussam.gamecache.domain.game;
+package com.serioussam.vortexos.domain.game;
 
 import java.util.List;
 

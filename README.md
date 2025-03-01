@@ -26,7 +26,7 @@ A personal project to track and record your gaming journey, including platforms,
 1. Clone the repository:
    ```bash
    git clone https://github.com/yourusername/gamecache.git
-   cd gamecache/backend
+   cd vortexos/backend
    ```
 2. Build and run the application:
    ```bash

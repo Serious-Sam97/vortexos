@@ -1,6 +1,6 @@
-package com.serioussam.gamecache.infrastructure.repository;
+package com.serioussam.vortexos.infrastructure.repository;
 
-import com.serioussam.gamecache.domain.platform.Platform;
+import com.serioussam.vortexos.domain.platform.Platform;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

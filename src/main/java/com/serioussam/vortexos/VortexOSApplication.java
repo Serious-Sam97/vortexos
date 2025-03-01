@@ -1,13 +1,13 @@
-package com.serioussam.gamecache;
+package com.serioussam.vortexos;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class GamecacheApplication {
+public class VortexOSApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(GamecacheApplication.class, args);
+		SpringApplication.run(VortexOSApplication.class, args);
 	}
 
 }

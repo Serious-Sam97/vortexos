@@ -1,6 +1,6 @@
-package com.serioussam.gamecache.domain.game;
+package com.serioussam.vortexos.domain.game;
 
-import com.serioussam.gamecache.domain.platform.Platform;
+import com.serioussam.vortexos.domain.platform.Platform;
 import jakarta.persistence.*;
 
 import java.time.LocalDate;
@@ -27,6 +27,9 @@ public class Game {
 
     @Column(nullable = true)
     private boolean completed;
+
+    @Column(nullable = false)
+    private boolean backlog = false;
 
     @Column(nullable = true)
     private String notes;
@@ -91,5 +94,15 @@ public class Game {
     public String getNotes()
     {
         return this.notes;
+    }
+
+    public void setBacklog(boolean backlog)
+    {
+        this.backlog = backlog;
+    }
+
+    public boolean getBacklog()
+    {
+        return this.backlog;
     }
 }
