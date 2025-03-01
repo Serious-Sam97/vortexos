@@ -106,6 +106,8 @@ public class GameController {
         }
 
         Game game = this.jpaGameRepository.findById(gameId).get();
+        game.setStartedDate(LocalDate.now());
+        game.setNotes("");
         game.setBacklog(false);
         this.jpaGameRepository.save(game);
 
