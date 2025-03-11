@@ -2,7 +2,9 @@ package com.serioussam.vortexos.application.controller;
 
 import com.serioussam.vortexos.application.dto.GameDTO;
 import com.serioussam.vortexos.domain.game.Game;
+import com.serioussam.vortexos.domain.game.GameRepository;
 import com.serioussam.vortexos.domain.platform.Platform;
+import com.serioussam.vortexos.domain.platform.PlatformRepository;
 import com.serioussam.vortexos.infrastructure.repository.JpaGameRepository;
 import com.serioussam.vortexos.infrastructure.repository.JpaPlatformRepository;
 import org.springframework.http.HttpStatus;
@@ -16,31 +18,31 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/games")
 public class GameController {
-    private final JpaGameRepository jpaGameRepository;
-    private final JpaPlatformRepository jpaPlatformRepository;
+    private final JpaGameRepository gameRepository;
+    private final JpaPlatformRepository platformRepository;
 
-    public GameController (JpaGameRepository jpaGameRepository, JpaPlatformRepository jpaPlatformRepository)
+    public GameController (JpaGameRepository gameRepository, JpaPlatformRepository platformRepository)
     {
-        this.jpaGameRepository = jpaGameRepository;
-        this.jpaPlatformRepository = jpaPlatformRepository;
+        this.gameRepository = gameRepository;
+        this.platformRepository = platformRepository;
     }
 
     @GetMapping
     public List<Game> getAllGames()
     {
-        return this.jpaGameRepository.gamesList();
+        return this.gameRepository.gamesList();
     }
 
     @GetMapping("/backlog")
     public List<Game> getAllPendingGames()
     {
-        return this.jpaGameRepository.backlogGamesList();
+        return this.gameRepository.backlogGamesList();
     }
 
     @PostMapping
     public ResponseEntity<Game> createGame(@RequestBody GameDTO gameResponse)
     {
-        Platform platform = this.jpaPlatformRepository.findById(gameResponse.getPlatformId())
+        Platform platform = this.platformRepository.findById(gameResponse.getPlatformId())
                 .orElseThrow(() -> new RuntimeException("Platform not found"));
 
         Game game = new Game();
@@ -49,14 +51,14 @@ public class GameController {
         game.setPlatform(platform);
         game.setBacklog(gameResponse.getBacklog());
 
-        Game savedGame = jpaGameRepository.save(game);
+        Game savedGame = gameRepository.save(game);
 
         return new ResponseEntity<>(savedGame, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Game> updateGame(@PathVariable("id") Long gameId, @RequestBody GameDTO gameResponse) {
-        Optional<Game> gameOptional = this.jpaGameRepository.findById(gameId);
+        Optional<Game> gameOptional = this.gameRepository.findById(gameId);
 
         if (gameOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -64,14 +66,14 @@ public class GameController {
 
         Game game = gameOptional.get();
         game.setNotes(gameResponse.getNotes());
-        this.jpaGameRepository.save(game);
+        this.gameRepository.save(game);
 
         return new ResponseEntity<>(game, HttpStatus.OK);
     }
 
     @PostMapping("/{id}/complete")
     public ResponseEntity<Game> completeGame(@PathVariable("id") Long gameId) {
-        Optional<Game> gameOptional = this.jpaGameRepository.findById(gameId);
+        Optional<Game> gameOptional = this.gameRepository.findById(gameId);
 
         if (gameOptional.isEmpty()) {
             return ResponseEntity.notFound().build();
@@ -80,36 +82,36 @@ public class GameController {
         Game game = gameOptional.get();
         game.setCompletedDate(LocalDate.now());
         game.setCompleted(true);
-        this.jpaGameRepository.save(game);
+        this.gameRepository.save(game);
 
         return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteGame(@PathVariable("id") Long gameId) {
-        boolean gameExists = this.jpaGameRepository.existsById(gameId);
+        boolean gameExists = this.gameRepository.existsById(gameId);
 
         if (!gameExists) {
             return ResponseEntity.notFound().build();
         }
 
-        this.jpaGameRepository.deleteById(gameId);
+        this.gameRepository.deleteById(gameId);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}/start")
     public ResponseEntity<Void> startGame(@PathVariable("id") Long gameId) {
-        boolean gameExists = this.jpaGameRepository.existsById(gameId);
+        boolean gameExists = this.gameRepository.existsById(gameId);
 
         if (!gameExists) {
             return ResponseEntity.notFound().build();
         }
 
-        Game game = this.jpaGameRepository.findById(gameId).get();
+        Game game = this.gameRepository.findById(gameId).get();
         game.setStartedDate(LocalDate.now());
         game.setNotes("");
         game.setBacklog(false);
-        this.jpaGameRepository.save(game);
+        this.gameRepository.save(game);
 
         return ResponseEntity.noContent().build();
     }

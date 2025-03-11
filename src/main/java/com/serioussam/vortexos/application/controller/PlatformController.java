@@ -11,16 +11,16 @@ import java.util.List;
 @RestController
 @RequestMapping("/platforms")
 public class PlatformController {
-    private final JpaPlatformRepository jpaPlatformRepository;
+    private final JpaPlatformRepository platformRepository;
 
-    public PlatformController (JpaPlatformRepository jpaPlatformRepository)
+    public PlatformController (JpaPlatformRepository platformRepository)
     {
-        this.jpaPlatformRepository = jpaPlatformRepository;
+        this.platformRepository = platformRepository;
     }
 
     @GetMapping
     public List<Platform> getAllPlatforms()
     {
-        return this.jpaPlatformRepository.findAll();
+        return this.platformRepository.findAll();
     }
 }

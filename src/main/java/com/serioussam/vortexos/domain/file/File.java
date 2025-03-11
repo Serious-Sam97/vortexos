@@ -18,6 +18,17 @@ public class File {
     private String path;
 
     @Column(nullable = false)
+    private String type; // "file" or "folder"
+
+    @Lob
+    @Column(name = "content")
+    private byte[] content;  // Stores file content (NULL for folders)
+
+    @Lob
+    @Column(name = "metadata", columnDefinition = "TEXT")  // JSON as TEXT
+    private String metadata;
+
+    @Column(nullable = false)
     private LocalDate createdDate;
 
     @Column(nullable = false)
@@ -36,6 +47,36 @@ public class File {
     public String getName()
     {
         return this.name;
+    }
+
+    public void setType(String type)
+    {
+        this.type = type;
+    }
+
+    public String getType()
+    {
+        return this.type;
+    }
+
+    public void setContent(byte[] content)
+    {
+        this.content = content;
+    }
+
+    public byte[] getContent()
+    {
+        return this.content;
+    }
+
+    public void setMetadata(String metadata)
+    {
+        this.metadata = metadata;
+    }
+
+    public String getMetadata()
+    {
+        return this.metadata;
     }
 
     public void setPath(String path)

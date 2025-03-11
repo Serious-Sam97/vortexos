@@ -1,10 +1,6 @@
 package com.serioussam.vortexos.application.dto;
 
 import jakarta.annotation.Nullable;
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
 
 import java.time.LocalDate;
 
@@ -14,6 +10,13 @@ public class FileDTO {
 
     private String name;
     private String path;
+    private String type;
+
+    @Nullable
+    private byte[] content;
+
+    @Nullable
+    private String metadata;
 
     @Nullable
     private LocalDate createdDate;
@@ -34,6 +37,36 @@ public class FileDTO {
     public String getName()
     {
         return this.name;
+    }
+
+    public void setType(String type)
+    {
+        this.type = type;
+    }
+
+    public String getType()
+    {
+        return this.type;
+    }
+
+    public void setContent(byte[] content)
+    {
+        this.content = content;
+    }
+
+    public byte[] getContent()
+    {
+        return this.content;
+    }
+
+    public void setMetadata(String metadata)
+    {
+        this.metadata = metadata;
+    }
+
+    public String getMetadata()
+    {
+        return this.metadata;
     }
 
     public void setPath(String path)
