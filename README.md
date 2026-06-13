@@ -1,7 +1,7 @@
 # VortexOS — Backend
 
-The server side of [VortexOS](../vortexos-frontend). A Spring Boot + SQLite service that
-provides the three things the in-browser OS can't do on its own:
+The server side of VortexOS (the in-browser OS lives in its own repo, `vortexos-frontend`).
+A Spring Boot + SQLite service that provides the three things the OS can't do on its own:
 
 1. **Accounts & auth** — register/login, BCrypt-hashed passwords, stateless JWTs.
 2. **The cloud drive** — the `File` table behind the OS's `/mnt/cloud` mount, scoped per user.
@@ -69,4 +69,4 @@ src/test/...                                # mirrors the above
 ## How it fits the OS
 
 The auth model, JWT pieces, per-user ownership, and how the frontend attaches the token are
-documented in **[../vortexos-frontend/docs/MULTIUSER.md](../vortexos-frontend/docs/MULTIUSER.md)**.
+documented in the **`vortexos-frontend` repo** under `docs/MULTIUSER.md`.

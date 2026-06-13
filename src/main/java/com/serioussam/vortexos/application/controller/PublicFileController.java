@@ -1,7 +1,6 @@
 package com.serioussam.vortexos.application.controller;
 
 import com.serioussam.vortexos.application.dto.FileDTO;
-import com.serioussam.vortexos.application.security.CurrentUser;
 import com.serioussam.vortexos.domain.file.File;
 import com.serioussam.vortexos.infrastructure.repository.JpaFileRepository;
 import org.springframework.http.HttpStatus;
@@ -11,33 +10,40 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
+/**
+ * The shared public drive behind the OS's /mnt/public mount. Unlike {@link FileController}
+ * these endpoints are NOT scoped to the caller — every signed-in user reads and writes the
+ * same files. Public files are stored as ordinary {@link File} rows owned by the reserved
+ * {@link #PUBLIC_OWNER} id, so they never collide with anyone's private /mnt/cloud files
+ * (different owner, different path prefix). Authentication is still required (Spring
+ * Security gates everything outside /auth/**).
+ */
 @RestController
-@RequestMapping("/files")
-public class FileController {
+@RequestMapping("/public/files")
+public class PublicFileController {
+
+    /** Reserved owner id for the shared public drive (no real user has id 0). */
+    public static final Long PUBLIC_OWNER = 0L;
 
     private final JpaFileRepository fileRepository;
-    private final CurrentUser currentUser;
 
-    public FileController(JpaFileRepository fileRepository, CurrentUser currentUser) {
+    public PublicFileController(JpaFileRepository fileRepository) {
         this.fileRepository = fileRepository;
-        this.currentUser = currentUser;
     }
 
     @GetMapping
     public List<File> index() {
-        return this.fileRepository.findByOwnerId(this.currentUser.id());
+        return this.fileRepository.findByOwnerId(PUBLIC_OWNER);
     }
 
-    /** Create or update a file/folder, keyed by its path, scoped to the current user. */
     @PostMapping
     public ResponseEntity<File> upsert(@RequestBody FileDTO dto) {
         if (dto.getPath() == null || dto.getPath().isBlank()) {
             return ResponseEntity.badRequest().build();
         }
 
-        Long ownerId = this.currentUser.id();
-        File file = this.fileRepository.findByPathAndOwnerId(dto.getPath(), ownerId).orElseGet(File::new);
-        file.setOwnerId(ownerId);
+        File file = this.fileRepository.findByPathAndOwnerId(dto.getPath(), PUBLIC_OWNER).orElseGet(File::new);
+        file.setOwnerId(PUBLIC_OWNER);
         file.setPath(dto.getPath());
         file.setName(dto.getName());
         file.setType(dto.getType() != null ? dto.getType() : "file");
@@ -52,49 +58,30 @@ public class FileController {
         return new ResponseEntity<>(saved, HttpStatus.CREATED);
     }
 
-    /** Delete a path and everything beneath it (folders delete recursively). */
     @DeleteMapping
     public ResponseEntity<Void> delete(@RequestParam("path") String path) {
         if (path == null || path.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
-        Long ownerId = this.currentUser.id();
-        this.fileRepository.findByPathAndOwnerId(path, ownerId).ifPresent(this.fileRepository::delete);
-        this.fileRepository.deleteAll(this.fileRepository.findByPathStartingWithAndOwnerId(path + "/", ownerId));
+        this.fileRepository.findByPathAndOwnerId(path, PUBLIC_OWNER).ifPresent(this.fileRepository::delete);
+        this.fileRepository.deleteAll(this.fileRepository.findByPathStartingWithAndOwnerId(path + "/", PUBLIC_OWNER));
         return ResponseEntity.noContent().build();
     }
 
-    /** Mark one of the current user's files as shared / unshared on the Network Neighborhood. */
-    @PutMapping("/share")
-    public ResponseEntity<Void> setShared(@RequestParam("path") String path, @RequestParam("shared") boolean shared) {
-        if (path == null || path.isBlank()) {
-            return ResponseEntity.badRequest().build();
-        }
-        return this.fileRepository.findByPathAndOwnerId(path, this.currentUser.id())
-                .map(file -> {
-                    file.setShared(shared);
-                    this.fileRepository.save(file);
-                    return ResponseEntity.noContent().<Void>build();
-                })
-                .orElseGet(() -> ResponseEntity.notFound().build());
-    }
-
-    /** Move/rename a path (and any descendants) by rewriting their path prefix. */
     @PutMapping("/rename")
     public ResponseEntity<Void> rename(@RequestParam("from") String from, @RequestParam("to") String to) {
         if (from == null || from.isBlank() || to == null || to.isBlank()) {
             return ResponseEntity.badRequest().build();
         }
 
-        Long ownerId = this.currentUser.id();
-        this.fileRepository.findByPathAndOwnerId(from, ownerId).ifPresent(file -> {
+        this.fileRepository.findByPathAndOwnerId(from, PUBLIC_OWNER).ifPresent(file -> {
             file.setPath(to);
             file.setName(to.substring(to.lastIndexOf('/') + 1));
             file.setUpdatedDate(LocalDate.now());
             this.fileRepository.save(file);
         });
 
-        for (File child : this.fileRepository.findByPathStartingWithAndOwnerId(from + "/", ownerId)) {
+        for (File child : this.fileRepository.findByPathStartingWithAndOwnerId(from + "/", PUBLIC_OWNER)) {
             child.setPath(to + child.getPath().substring(from.length()));
             child.setUpdatedDate(LocalDate.now());
             this.fileRepository.save(child);

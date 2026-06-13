@@ -25,6 +25,12 @@ public class File {
     @Column(nullable = false)
     private String type; // "file" or "folder"
 
+    // Whether the owner has shared this file on the Network Neighborhood (other users may
+    // read it). The DDL default lets this column be added to an already-populated table —
+    // SQLite rejects ADD COLUMN ... NOT NULL without a default.
+    @Column(nullable = false, columnDefinition = "boolean not null default false")
+    private boolean shared = false;
+
     // Base64-encoded content as TEXT. SQLite's JDBC driver does not support LOB reads,
     // so we avoid @Lob/byte[] and store the content as a plain (large) text column.
     @Column(name = "content", columnDefinition = "TEXT")
@@ -62,6 +68,16 @@ public class File {
     public String getType()
     {
         return this.type;
+    }
+
+    public void setShared(boolean shared)
+    {
+        this.shared = shared;
+    }
+
+    public boolean isShared()
+    {
+        return this.shared;
     }
 
     public void setContent(String content)
