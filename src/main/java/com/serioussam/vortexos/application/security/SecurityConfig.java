@@ -37,10 +37,14 @@ public class SecurityConfig {
         http
                 .cors(cors -> {})
                 .csrf(csrf -> csrf.disable())
+                // The in-OS Browser frames /proxy responses, so don't deny framing.
+                // (The backend serves only an API + the proxy — no interactive pages to clickjack.)
+                .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/ws/**").permitAll() // authenticated by JwtHandshakeInterceptor
+                        .requestMatchers("/proxy").permitAll() // authenticated by the token query param
                         .anyRequest().authenticated())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(
