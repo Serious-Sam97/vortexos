@@ -12,7 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /** Verifies GET /platforms serves the catalogue seeded by PlatformSeeder. */
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
 class PlatformControllerTest {
 
     @Autowired private MockMvc mockMvc;

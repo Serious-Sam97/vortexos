@@ -34,9 +34,23 @@ public class Game {
     @Column(nullable = true)
     private String notes;
 
+    // Owning user's id — a plain column (not a @ManyToOne) to keep the User out of JSON.
+    @Column(nullable = false)
+    private Long ownerId;
+
     public Long getId()
     {
         return id;
+    }
+
+    public void setOwnerId(Long ownerId)
+    {
+        this.ownerId = ownerId;
+    }
+
+    public Long getOwnerId()
+    {
+        return this.ownerId;
     }
 
     public void setId(Long id)

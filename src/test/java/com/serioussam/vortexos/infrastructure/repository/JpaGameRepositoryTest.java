@@ -23,12 +23,16 @@ class JpaGameRepositoryTest {
     @Autowired private JpaGameRepository gameRepository;
     @Autowired private TestEntityManager em;
 
-    private Game game(Platform platform, String title, boolean backlog) {
+    private static final Long OWNER = 1L;
+    private static final Long OTHER = 2L;
+
+    private Game game(Platform platform, String title, boolean backlog, Long ownerId) {
         Game game = new Game();
         game.setTitle(title);
         game.setPlatform(platform);
         game.setBacklog(backlog);
         game.setStartedDate(LocalDate.now());
+        game.setOwnerId(ownerId);
         return game;
     }
 
@@ -38,22 +42,37 @@ class JpaGameRepositoryTest {
         platform.setName("Test Platform");
         em.persist(platform);
 
-        em.persist(game(platform, "Playing Now", false));
-        em.persist(game(platform, "On The Shelf", true));
+        em.persist(game(platform, "Playing Now", false, OWNER));
+        em.persist(game(platform, "On The Shelf", true, OWNER));
         em.flush();
 
-        assertThat(gameRepository.gamesList())
+        assertThat(gameRepository.gamesList(OWNER))
                 .extracting(Game::getTitle)
                 .containsExactly("Playing Now");
 
-        assertThat(gameRepository.backlogGamesList())
+        assertThat(gameRepository.backlogGamesList(OWNER))
                 .extracting(Game::getTitle)
                 .containsExactly("On The Shelf");
     }
 
     @Test
+    void lists_areScopedToTheOwner() {
+        Platform platform = new Platform();
+        platform.setName("Test Platform");
+        em.persist(platform);
+
+        em.persist(game(platform, "Mine", false, OWNER));
+        em.persist(game(platform, "Theirs", false, OTHER));
+        em.flush();
+
+        assertThat(gameRepository.gamesList(OWNER))
+                .extracting(Game::getTitle)
+                .containsExactly("Mine"); // the other user's game is excluded
+    }
+
+    @Test
     void lists_areEmptyWhenNoGamesExist() {
-        assertThat(gameRepository.gamesList()).isEmpty();
-        assertThat(gameRepository.backlogGamesList()).isEmpty();
+        assertThat(gameRepository.gamesList(OWNER)).isEmpty();
+        assertThat(gameRepository.backlogGamesList(OWNER)).isEmpty();
     }
 }

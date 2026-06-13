@@ -2,21 +2,23 @@ package com.serioussam.vortexos.application.controller;
 
 import com.serioussam.vortexos.domain.game.Game;
 import com.serioussam.vortexos.domain.platform.Platform;
+import com.serioussam.vortexos.domain.user.User;
 import com.serioussam.vortexos.infrastructure.repository.JpaGameRepository;
 import com.serioussam.vortexos.infrastructure.repository.JpaPlatformRepository;
+import com.serioussam.vortexos.infrastructure.repository.JpaUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.Matchers.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -27,23 +29,41 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * the platforms seeded at startup stay put.
  */
 @SpringBootTest
-@AutoConfigureMockMvc
+@AutoConfigureMockMvc(addFilters = false)
+@WithMockUser(username = "tester")
 @Transactional
 class GameControllerTest {
 
     @Autowired private MockMvc mockMvc;
     @Autowired private JpaGameRepository gameRepository;
     @Autowired private JpaPlatformRepository platformRepository;
+    @Autowired private JpaUserRepository userRepository;
 
     private Platform platform;
+    private Long testerId;
 
     @BeforeEach
     void setUp() {
         platform = platformRepository.findAll().get(0); // seeded "PC"
+        testerId = persistUser("tester");
+    }
+
+    private Long persistUser(String username) {
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword("{noop}irrelevant"); // never authenticated against in these tests
+        user.setRole("USER");
+        user.setCreatedDate(LocalDate.now());
+        return userRepository.save(user).getId();
     }
 
     private Game persistGame(String title, boolean backlog, boolean completed) {
+        return persistGame(title, backlog, completed, testerId);
+    }
+
+    private Game persistGame(String title, boolean backlog, boolean completed, Long ownerId) {
         Game game = new Game();
+        game.setOwnerId(ownerId);
         game.setTitle(title);
         game.setPlatform(platform);
         game.setBacklog(backlog);
@@ -94,19 +114,51 @@ class GameControllerTest {
                 .andExpect(jsonPath("$.platform.id").value(platform.getId()))
                 .andExpect(jsonPath("$.startedDate").isNotEmpty());
 
-        assertThat(gameRepository.gamesList()).isEmpty(); // it's in the backlog
-        assertThat(gameRepository.backlogGamesList()).extracting(Game::getTitle).contains("Hollow Knight");
+        assertThat(gameRepository.gamesList(testerId)).isEmpty(); // it's in the backlog
+        assertThat(gameRepository.backlogGamesList(testerId)).extracting(Game::getTitle).contains("Hollow Knight");
     }
 
     @Test
-    void createGame_withUnknownPlatform_currentlyFails() {
-        // Documents present behaviour: an unknown platform throws and leaks a 500.
-        // A candidate for a proper 400/404 in a later pass.
+    void getAllGames_excludesOtherUsersGames() throws Exception {
+        Long otherId = persistUser("someone-else");
+        persistGame("My Game", false, false, testerId);
+        persistGame("Their Game", false, false, otherId);
+
+        mockMvc.perform(get("/games"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].title").value("My Game"));
+    }
+
+    @Test
+    void mutating_anotherUsersGame_returns404() throws Exception {
+        Long otherId = persistUser("someone-else");
+        Game theirs = persistGame("Their Game", false, false, otherId);
+
+        // The tester must not be able to see, update, complete, start, or delete it.
+        mockMvc.perform(put("/games/" + theirs.getId()).contentType(MediaType.APPLICATION_JSON).content("{\"notes\":\"x\"}"))
+                .andExpect(status().isNotFound());
+        mockMvc.perform(delete("/games/" + theirs.getId())).andExpect(status().isNotFound());
+        mockMvc.perform(post("/games/" + theirs.getId() + "/complete")).andExpect(status().isNotFound());
+        mockMvc.perform(get("/games/" + theirs.getId() + "/start")).andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createGame_withUnknownPlatform_returns404() throws Exception {
         String body = """
                 { "title": "Orphan", "platform_id": 999999, "backlog": false }
                 """;
-        assertThrows(Exception.class, () ->
-                mockMvc.perform(post("/games").contentType(MediaType.APPLICATION_JSON).content(body)));
+        mockMvc.perform(post("/games").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createGame_withMissingTitle_returns400() throws Exception {
+        String body = """
+                { "platform_id": %d, "backlog": false }
+                """.formatted(platform.getId());
+        mockMvc.perform(post("/games").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
     }
 
     // ── update notes ────────────────────────────────────────────────────

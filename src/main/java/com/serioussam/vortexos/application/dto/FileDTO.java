@@ -13,7 +13,7 @@ public class FileDTO {
     private String type;
 
     @Nullable
-    private byte[] content;
+    private String content;
 
     @Nullable
     private String metadata;
@@ -49,12 +49,12 @@ public class FileDTO {
         return this.type;
     }
 
-    public void setContent(byte[] content)
+    public void setContent(String content)
     {
         this.content = content;
     }
 
-    public byte[] getContent()
+    public String getContent()
     {
         return this.content;
     }

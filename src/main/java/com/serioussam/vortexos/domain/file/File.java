@@ -17,15 +17,20 @@ public class File {
     @Column(nullable = false)
     private String path;
 
+    // Owning user's id. A plain column (not a @ManyToOne) so the User — and its password
+    // hash — is never serialized into a /files response.
+    @Column(nullable = false)
+    private Long ownerId;
+
     @Column(nullable = false)
     private String type; // "file" or "folder"
 
-    @Lob
-    @Column(name = "content")
-    private byte[] content;  // Stores file content (NULL for folders)
+    // Base64-encoded content as TEXT. SQLite's JDBC driver does not support LOB reads,
+    // so we avoid @Lob/byte[] and store the content as a plain (large) text column.
+    @Column(name = "content", columnDefinition = "TEXT")
+    private String content; // NULL for folders
 
-    @Lob
-    @Column(name = "metadata", columnDefinition = "TEXT")  // JSON as TEXT
+    @Column(name = "metadata", columnDefinition = "TEXT") // JSON as TEXT
     private String metadata;
 
     @Column(nullable = false)
@@ -59,12 +64,12 @@ public class File {
         return this.type;
     }
 
-    public void setContent(byte[] content)
+    public void setContent(String content)
     {
         this.content = content;
     }
 
-    public byte[] getContent()
+    public String getContent()
     {
         return this.content;
     }
@@ -87,6 +92,16 @@ public class File {
     public String getPath()
     {
         return this.path;
+    }
+
+    public void setOwnerId(Long ownerId)
+    {
+        this.ownerId = ownerId;
+    }
+
+    public Long getOwnerId()
+    {
+        return this.ownerId;
     }
 
     public void setCreatedDate(LocalDate createdDate)
