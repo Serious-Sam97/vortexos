@@ -18,6 +18,14 @@ public class Score {
     @Column(nullable = false)
     private Long ownerId;
 
+    // Denormalized username + classic 3-letter arcade initials, for the GLOBAL leaderboard
+    // (so a global query needs no User join). Nullable: pre-Arcade rows have neither.
+    @Column
+    private String ownerName;
+
+    @Column(length = 3)
+    private String initials;
+
     @Column(nullable = false)
     private String game;
 
@@ -33,6 +41,12 @@ public class Score {
 
     public Long getOwnerId() { return ownerId; }
     public void setOwnerId(Long ownerId) { this.ownerId = ownerId; }
+
+    public String getOwnerName() { return ownerName; }
+    public void setOwnerName(String ownerName) { this.ownerName = ownerName; }
+
+    public String getInitials() { return initials; }
+    public void setInitials(String initials) { this.initials = initials; }
 
     public String getGame() { return game; }
     public void setGame(String game) { this.game = game; }

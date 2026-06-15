@@ -91,6 +91,18 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
+        // Arcade match frames (invite / accept / decline / move / resign / rematch …) are
+        // relayed POINT-TO-POINT to the named opponent, stamped with the sender. The server
+        // stays stateless about matches — all game state lives in the two clients.
+        if ("match".equals(type)) {
+            String to = node.path("to").asText();
+            if (to.isBlank()) return;
+            com.fasterxml.jackson.databind.node.ObjectNode out = (com.fasterxml.jackson.databind.node.ObjectNode) node;
+            out.put("from", userOf(session));
+            sendTo(to, this.mapper.writeValueAsString(out));
+            return;
+        }
+
         if (!"msg".equals(type)) return;
 
         String from = userOf(session);

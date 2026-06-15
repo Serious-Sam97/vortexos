@@ -101,4 +101,42 @@ class ScoreControllerTest {
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].value", is(10)));
     }
+
+    @Test
+    void recordStampsOwnerNameAndInitials() throws Exception {
+        mockMvc.perform(post("/scores").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"game\":\"snake\",\"value\":420,\"initials\":\"sam\"}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.ownerName", is("tester")))
+                .andExpect(jsonPath("$.initials", is("SAM")));
+    }
+
+    @Test
+    void recordDefaultsInitialsFromUsername() throws Exception {
+        mockMvc.perform(post("/scores").contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"game\":\"snake\",\"value\":1}"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.initials", is("TES")));
+    }
+
+    @Test
+    void globalBoardIncludesEveryUsersScores() throws Exception {
+        Long rivalId = persistUser("rival");
+        persistScore(rivalId, "snake", 9999);
+        persistScore(testerId, "snake", 10);
+        mockMvc.perform(get("/scores/global").param("game", "snake"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].value", is(9999)));
+    }
+
+    @Test
+    void globalBoardSupportsAscendingOrder() throws Exception {
+        Long rivalId = persistUser("rival");
+        persistScore(rivalId, "race", 88);
+        persistScore(testerId, "race", 120);
+        mockMvc.perform(get("/scores/global").param("game", "race").param("order", "asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].value", is(88)));
+    }
 }
