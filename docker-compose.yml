@@ -1,0 +1,36 @@
+# VortexOS backend stack: PostgreSQL + the Spring Boot API.
+# Self-contained — run from this repo:  docker compose up --build
+# The API is published on http://localhost:8082.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-vortex}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-vortex}
+      POSTGRES_DB: ${POSTGRES_DB:-vortexos}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vortex} -d ${POSTGRES_DB:-vortexos}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    restart: unless-stopped
+
+  backend:
+    build: .
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-vortexos}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-vortex}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-vortex}
+      # Override in production. Base64, >= 256 bits.
+      JWT_SECRET: ${JWT_SECRET:-Vm9ydGV4T1NkZXZzZWNyZXRfY2hhbmdlX21lX2luX3Byb2R1Y3Rpb25fMDEyMzQ1Njc4OQ==}
+    ports:
+      - "8082:8082"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  pgdata:
