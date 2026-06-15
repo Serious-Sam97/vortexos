@@ -22,8 +22,11 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-	implementation 'org.xerial:sqlite-jdbc'
-	implementation 'org.hibernate.orm:hibernate-community-dialects'
+	// PostgreSQL is the production/runtime database.
+	runtimeOnly 'org.postgresql:postgresql'
+	// SQLite is retained only for the fast in-memory test datasource (src/test/resources).
+	testRuntimeOnly 'org.xerial:sqlite-jdbc'
+	testRuntimeOnly 'org.hibernate.orm:hibernate-community-dialects'
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.6'

@@ -1,0 +1,8 @@
+build/
+.gradle/
+*.db
+*.db-wal
+*.db-shm
+.idea/
+.vscode/
+*.log
