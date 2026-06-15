@@ -98,9 +98,36 @@ class ChatWebSocketTest {
         assertThat(msg).isNotNull();
     }
 
+    // Presence users are objects { name, status, activity }.
     private static boolean contains(JsonNode arr, String value) {
         if (!arr.isArray()) return false;
-        for (JsonNode n : arr) if (n.asText().equals(value)) return true;
+        for (JsonNode n : arr) if (n.path("name").asText().equals(value)) return true;
         return false;
+    }
+
+    private static JsonNode userEntry(JsonNode arr, String name) {
+        if (arr.isArray()) for (JsonNode n : arr) if (n.path("name").asText().equals(name)) return n;
+        return null;
+    }
+
+    @Test
+    void statusUpdatesAreReflectedInPresence() throws Exception {
+        String carol = "carol-" + UUID.randomUUID();
+        String token = register(carol);
+        Collector c = new Collector();
+        WebSocketSession session = connect(token, c);
+
+        // Initial presence: carol is "active" with no activity.
+        String initial = await(c.frames, n -> n.path("type").asText().equals("presence") && contains(n.path("users"), carol));
+        assertThat(initial).isNotNull();
+
+        // Report a status + activity, then expect an updated presence frame.
+        session.sendMessage(new TextMessage("{\"type\":\"status\",\"status\":\"idle\",\"activity\":\"Minesweeper\"}"));
+        String updated = await(c.frames, n -> {
+            JsonNode u = userEntry(n.path("users"), carol);
+            return n.path("type").asText().equals("presence") && u != null
+                    && u.path("status").asText().equals("idle") && u.path("activity").asText().equals("Minesweeper");
+        });
+        assertThat(updated).isNotNull();
     }
 }

@@ -28,4 +28,13 @@ public class CurrentUser {
                 .map(User::getId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
     }
+
+    /** The current user's username, or 401 if unauthenticated. */
+    public String username() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated() || auth.getName() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
+        }
+        return auth.getName();
+    }
 }
