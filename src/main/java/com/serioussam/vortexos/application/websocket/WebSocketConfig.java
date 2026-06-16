@@ -21,6 +21,6 @@ public class WebSocketConfig implements WebSocketConfigurer {
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(this.chatHandler, "/ws")
                 .addInterceptors(this.jwtHandshakeInterceptor)
-                .setAllowedOrigins("http://localhost:5173", "https://vortexos-seven.vercel.app");
+                .setAllowedOrigins("http://localhost:5173", "http://localhost:5174", "https://vortexos-seven.vercel.app", "https://vortex.serious-sam.dev");
     }
 }
