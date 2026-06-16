@@ -35,7 +35,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> {})
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf.disable())
                 // The in-OS Browser frames /proxy responses, so don't deny framing.
                 // (The backend serves only an API + the proxy — no interactive pages to clickjack.)
@@ -77,7 +77,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:5173", "https://vortexos-seven.vercel.app"));
+        config.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:5174", "https://vortexos-seven.vercel.app", "https://vortex.serious-sam.dev"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
 
