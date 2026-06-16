@@ -25,6 +25,10 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-vortex}
       # Override in production. Base64, >= 256 bits.
       JWT_SECRET: ${JWT_SECRET:-Vm9ydGV4T1NkZXZzZWNyZXRfY2hhbmdlX21lX2luX3Byb2R1Y3Rpb25fMDEyMzQ1Njc4OQ==}
+      # Messenger file-transfer store — persisted on a named volume (see below).
+      VORTEX_TRANSFER_DIR: /data/transfers
+    volumes:
+      - transfers:/data/transfers
     ports:
       - "8082:8082"
     depends_on:
@@ -34,3 +38,4 @@ services:
 
 volumes:
   pgdata:
+  transfers:

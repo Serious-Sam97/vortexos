@@ -19,8 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * The Network server. Tracks who is connected with rich presence (status + the app they're
  * using) and routes direct messages between users. Wire protocol (JSON text frames):
  *   client → server : { "type":"msg", "to":"<username>", "body":"<text>" }
- *                      { "type":"status", "status":"active|idle|away", "activity":"<app>" }
- *   server → client : { "type":"presence", "users":[ {"name","status","activity"} ... ] }
+ *                      { "type":"status", "status":"active|idle|away", "activity":"<app>",
+ *                        "mstatus":"<msn status>", "psm":"<personal message>" }  (msn fields optional)
+ *   server → client : { "type":"presence", "users":[ {"name","status","activity","mstatus","psm"} ... ] }
  *                      { "type":"msg", "from":"<username>", "body":"<text>", "ts":<epochMs> }
  * Nothing is persisted — presence and messages are live only.
  */
@@ -32,11 +33,45 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
     private final Map<String, Set<WebSocketSession>> sessions = new ConcurrentHashMap<>();
     // username → live presence meta (status + current activity), shared across their tabs.
     private final Map<String, Meta> meta = new ConcurrentHashMap<>();
+    // Offline-message store (Phase 30 · M3) — messages held for users who weren't connected.
+    private final com.serioussam.vortexos.infrastructure.repository.JpaOfflineMessageRepository offlineMessages;
+    // Permanent message history (Phase 30 follow-up) — every message persisted for later reload.
+    private final com.serioussam.vortexos.infrastructure.repository.JpaMessageRepository messages;
+
+    public ChatWebSocketHandler(com.serioussam.vortexos.infrastructure.repository.JpaOfflineMessageRepository offlineMessages,
+                                com.serioussam.vortexos.infrastructure.repository.JpaMessageRepository messages) {
+        this.offlineMessages = offlineMessages;
+        this.messages = messages;
+    }
+
+    /** Persist a 1:1 message to the permanent history. */
+    private void persist(String sender, String recipient, String body, long ts) {
+        com.serioussam.vortexos.domain.messenger.Message m = new com.serioussam.vortexos.domain.messenger.Message();
+        m.setSender(sender);
+        m.setRecipient(recipient);
+        m.setBody(body);
+        m.setCreatedAt(ts);
+        this.messages.save(m);
+    }
+
+    /** Persist a group message once (the multicast fans the same message out per participant). */
+    private void persistGroup(String sender, String groupId, String body, long ts) {
+        if (this.messages.existsByGroupIdAndSenderAndCreatedAt(groupId, sender, ts)) return;
+        com.serioussam.vortexos.domain.messenger.Message m = new com.serioussam.vortexos.domain.messenger.Message();
+        m.setSender(sender);
+        m.setGroupId(groupId);
+        m.setBody(body);
+        m.setCreatedAt(ts);
+        this.messages.save(m);
+    }
 
     /** Mutable per-user presence state. */
     static final class Meta {
         volatile String status = "active";
         volatile String activity = "";
+        // Messenger (Phase 30): the chosen MSN status + personal message, broadcast in presence.
+        volatile String mstatus = "available";
+        volatile String psm = "";
     }
 
     private static String userOf(WebSocketSession session) {
@@ -48,7 +83,23 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         String user = userOf(session);
         this.sessions.computeIfAbsent(user, k -> ConcurrentHashMap.newKeySet()).add(session);
         this.meta.computeIfAbsent(user, k -> new Meta());
+        deliverOfflineMessages(user, session);
         broadcastPresence();
+    }
+
+    /** Flush any messages queued while this user was offline, then remove them. */
+    private void deliverOfflineMessages(String user, WebSocketSession session) {
+        var pending = this.offlineMessages.findByRecipientOrderByCreatedAtAsc(user);
+        if (pending.isEmpty()) return;
+        for (var om : pending) {
+            try {
+                send(session, this.mapper.writeValueAsString(Map.of(
+                        "type", "msg", "from", om.getSender(), "body", om.getBody(), "ts", om.getCreatedAt())));
+            } catch (IOException e) {
+                return; // keep them queued if delivery failed mid-flush
+            }
+        }
+        this.offlineMessages.deleteAll(pending);
     }
 
     @Override
@@ -76,6 +127,13 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
                 String s = node.path("status").asText("active");
                 m.status = (s.isBlank() ? "active" : s);
                 m.activity = node.path("activity").asText("");
+                // Optional Messenger fields — only overwritten when the frame carries them,
+                // so OS-level status pings (no Messenger open) don't clear the MSN status/psm.
+                if (node.has("mstatus")) {
+                    String ms = node.path("mstatus").asText("available");
+                    m.mstatus = (ms.isBlank() ? "available" : ms);
+                }
+                if (node.has("psm")) m.psm = node.path("psm").asText("");
                 broadcastPresence();
             }
             return;
@@ -103,6 +161,33 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
+        // Messenger typing / nudge / file-transfer frames (Phase 30) — relayed point-to-point,
+        // stamped with the sender, nothing persisted.
+        if ("typing".equals(type) || "nudge".equals(type) || "file".equals(type)) {
+            String to = node.path("to").asText();
+            if (to.isBlank()) return;
+            com.fasterxml.jackson.databind.node.ObjectNode out = (com.fasterxml.jackson.databind.node.ObjectNode) node;
+            out.put("from", userOf(session));
+            sendTo(to, this.mapper.writeValueAsString(out));
+            return;
+        }
+
+        // Group messages — a client-side multicast (one frame per participant). Relay to the
+        // named participant AND persist once to the permanent history (de-duped by ts).
+        if ("groupmsg".equals(type)) {
+            String to = node.path("to").asText();
+            if (to.isBlank()) return;
+            String from = userOf(session);
+            com.fasterxml.jackson.databind.node.ObjectNode out = (com.fasterxml.jackson.databind.node.ObjectNode) node;
+            out.put("from", from);
+            sendTo(to, this.mapper.writeValueAsString(out));
+            String groupId = node.path("groupId").asText();
+            String body = node.path("body").asText();
+            long ts = node.path("ts").asLong(System.currentTimeMillis());
+            if (!groupId.isBlank() && !body.isEmpty()) persistGroup(from, groupId, body, ts);
+            return;
+        }
+
         if (!"msg".equals(type)) return;
 
         String from = userOf(session);
@@ -110,20 +195,45 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         String body = node.path("body").asText();
         if (to.isBlank() || body.isEmpty()) return;
 
-        String payload = this.mapper.writeValueAsString(Map.of(
-                "type", "msg", "from", from, "body", body, "ts", System.currentTimeMillis()));
-        sendTo(to, payload);
+        // Use the client's send timestamp so the sender's live copy, the recipient's copy and
+        // the persisted history all share one ts (lets the client de-dup live vs. history).
+        long ts = node.path("ts").asLong(System.currentTimeMillis());
+        persist(from, to, body, ts); // permanent history (online or offline)
+
+        Set<WebSocketSession> recipientSessions = this.sessions.get(to);
+        if (recipientSessions != null && !recipientSessions.isEmpty()) {
+            // Recipient online → deliver live.
+            sendTo(to, this.mapper.writeValueAsString(Map.of(
+                    "type", "msg", "from", from, "body", body, "ts", ts)));
+        } else {
+            // Recipient offline → also queue it for the sign-in delivery/toast (Phase 30 · M3).
+            com.serioussam.vortexos.domain.messenger.OfflineMessage om =
+                    new com.serioussam.vortexos.domain.messenger.OfflineMessage();
+            om.setRecipient(to);
+            om.setSender(from);
+            om.setBody(body);
+            om.setCreatedAt(ts);
+            this.offlineMessages.save(om);
+        }
     }
 
+    /**
+     * Send each connected user a presence roster. Invisible users ("Appear offline") are
+     * hidden from everyone *except themselves* (Phase 30 · M3), so the roster is tailored
+     * per recipient.
+     */
     private void broadcastPresence() throws IOException {
-        List<Map<String, String>> users = new ArrayList<>();
-        for (String name : this.sessions.keySet()) {
-            Meta m = this.meta.getOrDefault(name, new Meta());
-            users.add(Map.of("name", name, "status", m.status, "activity", m.activity));
-        }
-        String payload = this.mapper.writeValueAsString(Map.of("type", "presence", "users", users));
-        for (Set<WebSocketSession> set : this.sessions.values()) {
-            for (WebSocketSession s : set) send(s, payload);
+        for (Map.Entry<String, Set<WebSocketSession>> entry : this.sessions.entrySet()) {
+            String recipient = entry.getKey();
+            List<Map<String, String>> users = new ArrayList<>();
+            for (String name : this.sessions.keySet()) {
+                Meta m = this.meta.getOrDefault(name, new Meta());
+                if ("invisible".equals(m.mstatus) && !name.equals(recipient)) continue; // hidden from others
+                users.add(Map.of("name", name, "status", m.status, "activity", m.activity,
+                        "mstatus", m.mstatus, "psm", m.psm));
+            }
+            String payload = this.mapper.writeValueAsString(Map.of("type", "presence", "users", users));
+            for (WebSocketSession s : entry.getValue()) send(s, payload);
         }
     }
 

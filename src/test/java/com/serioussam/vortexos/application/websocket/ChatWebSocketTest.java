@@ -111,6 +111,60 @@ class ChatWebSocketTest {
     }
 
     @Test
+    void deliversOfflineMessagesWhenTheRecipientConnects() throws Exception {
+        String sender = "snd-" + UUID.randomUUID();
+        String recipient = "rcp-" + UUID.randomUUID();
+        String senderToken = register(sender);
+        String recipientToken = register(recipient); // registered but NOT connected yet
+
+        Collector sc = new Collector();
+        WebSocketSession senderSession = connect(senderToken, sc);
+
+        // Message a user who is offline → it should be queued.
+        senderSession.sendMessage(new TextMessage(
+                "{\"type\":\"msg\",\"to\":\"" + recipient + "\",\"body\":\"saved for later\"}"));
+        Thread.sleep(400); // let the server persist before the recipient connects
+
+        // Recipient signs in → the queued message is delivered.
+        Collector rc = new Collector();
+        connect(recipientToken, rc);
+        String msg = await(rc.frames, n -> n.path("type").asText().equals("msg")
+                && n.path("from").asText().equals(sender) && n.path("body").asText().equals("saved for later"));
+        assertThat(msg).isNotNull();
+    }
+
+    @Test
+    void invisibleUsersAreHiddenFromOthersButSeeThemselves() throws Exception {
+        String vis = "vis-" + UUID.randomUUID();
+        String inv = "inv-" + UUID.randomUUID();
+        String visToken = register(vis);
+        String invToken = register(inv);
+
+        Collector vc = new Collector();
+        Collector ic = new Collector();
+        connect(visToken, vc);
+        WebSocketSession invSession = connect(invToken, ic);
+
+        // Initially the visible user can see the soon-to-be-invisible one.
+        assertThat(await(vc.frames, n -> n.path("type").asText().equals("presence") && contains(n.path("users"), inv))).isNotNull();
+
+        // inv chooses "Appear offline".
+        invSession.sendMessage(new TextMessage("{\"type\":\"status\",\"status\":\"active\",\"mstatus\":\"invisible\"}"));
+
+        // The visible user now gets a roster WITHOUT inv (but still listing themselves).
+        String hidden = await(vc.frames, n -> n.path("type").asText().equals("presence")
+                && contains(n.path("users"), vis) && !contains(n.path("users"), inv));
+        assertThat(hidden).isNotNull();
+
+        // inv still sees themselves (now flagged invisible).
+        String self = await(ic.frames, n -> {
+            JsonNode u = userEntry(n.path("users"), inv);
+            return n.path("type").asText().equals("presence") && u != null && u.path("mstatus").asText().equals("invisible");
+        });
+        assertThat(self).isNotNull();
+    }
+
+    @Test
     void statusUpdatesAreReflectedInPresence() throws Exception {
         String carol = "carol-" + UUID.randomUUID();
         String token = register(carol);
