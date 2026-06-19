@@ -164,9 +164,10 @@ public class ChatWebSocketHandler extends TextWebSocketHandler {
         // Vortex Pet interactions (Phase 29 social) — playdate invites/accepts, gifts, pokes and
         // battle moves are relayed point-to-point, stamped with the sender. The server stays
         // stateless about pets; all pet state lives in the two clients.
-        // Messenger typing / nudge / file-transfer frames (Phase 30) — relayed point-to-point,
-        // stamped with the sender, nothing persisted.
-        if ("typing".equals(type) || "nudge".equals(type) || "file".equals(type) || "pet".equals(type)) {
+        // Messenger typing / nudge / file-transfer / WebRTC-voice-signalling frames — relayed
+        // point-to-point, stamped with the sender, nothing persisted. ("rtc" carries the
+        // call invite + SDP offer/answer + ICE candidates for voice calls.)
+        if ("typing".equals(type) || "nudge".equals(type) || "file".equals(type) || "pet".equals(type) || "rtc".equals(type)) {
             String to = node.path("to").asText();
             if (to.isBlank()) return;
             com.fasterxml.jackson.databind.node.ObjectNode out = (com.fasterxml.jackson.databind.node.ObjectNode) node;
